@@ -5,7 +5,7 @@ Sends traffic from the Docker for Mac host, onto our OSX host.
 
 eg.
 
-Xdebug picks up the Docker for Mac VMs network bridge as the source IP and sends it to that instead of the OSX host. This project fixes that.
+Xdebug picks up the Docker for Mac VMs network bridge as the source IP and sends it to that instead of the OSX host. This project fixes that by forwarding that traffic onto the OSX host.
 
 ## Assumptions
 
@@ -15,6 +15,7 @@ Xdebug picks up the Docker for Mac VMs network bridge as the source IP and sends
 
 To use this approach, merge the following into your existing docker-compose.yml file:
 
+```
 version: '2'
 services:
   xdebug:
@@ -22,4 +23,4 @@ services:
     network_mode: host
     environment:
       - PORT=9000
-
+```
