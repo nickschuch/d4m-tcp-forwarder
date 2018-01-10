@@ -1,21 +1,32 @@
 #!/usr/bin/make -f
 
-GO=go
-GB=gb
+export CGO_ENABLED=0
 
-darwin:
-	env GOOS=darwin GOARCH=amd64 $(GB) build
+PROJECT=github.com/nickschuch/d4m-tcp-forwarder
 
-linux:
-	env GOOS=linux GOARCH=amd64 $(GB) build
+# Builds the project
+build:
+	gox -os='linux darwin' -arch='amd64' -output='bin/d4m-tcp-forwarder_{{.OS}}_{{.Arch}}' -ldflags='-extldflags "-static"' $(PROJECT)
 
-docker: linux
-	docker build -t nickschuch/d4m-tcp-forwarder .
+# Run all lint checking with exit codes for CI
+lint:
+	golint -set_exit_status `go list ./... | grep -v /vendor/`
 
-all: test clean darwin linux
-
-clean:
-	rm -fR pkg bin
-
+# Run tests with coverage reporting
 test:
-	$(GB) test -test.v
+	go test -cover ./server/...
+	go test -cover ./cmd/...
+
+IMAGE=nickschuch/d4m-tcp-forwarder
+VERSION=$(shell git describe --tags --always)
+
+# Releases the project Docker Hub
+release:
+	# Building M8s versioned image...
+	docker build -t ${IMAGE}:${VERSION} .
+	docker push ${IMAGE}:${VERSION}
+	# Building M8s latest image...
+	docker build -t ${IMAGE}:latest .
+	docker push ${IMAGE}:latest
+
+.PHONY: build lint test release

@@ -8,14 +8,15 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const gateway = "192.168.65.1"
-
-var port = kingpin.Flag("port", "Port to forward").Default("9000").OverrideDefaultFromEnvar("PORT").String()
+var (
+	cliPort    = kingpin.Flag("port", "Port to forward").Default("9000").OverrideDefaultFromEnvar("PORT").String()
+	cliGateway = kingpin.Flag("gateway", "Host IP address which is running xdebug").Default("docker.for.mac.localhost").OverrideDefaultFromEnvar("GATEWAY").String()
+)
 
 func main() {
 	kingpin.Parse()
 
-	l, err := net.Listen("tcp", ":"+*port)
+	l, err := net.Listen("tcp", ":"+*cliPort)
 	if err != nil {
 		log.Fatalf("Failed to setup listener: %v", err)
 	}
@@ -26,7 +27,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("ERROR: failed to accept listener: %v", err)
 		}
-		go forward(conn, gateway+":"+*port)
+		go forward(conn, *cliGateway+":"+*cliPort)
 	}
 }
 
