@@ -37,6 +37,13 @@ func forward(conn net.Conn, b string) {
 	client, err := net.Dial("tcp", b)
 	if err != nil {
 		log.Errorf("Fail to dial: %v", err)
+
+		// We also want to close the connections as well.
+		// This will ensure that we don't have any "hang" when
+		// we cannot connect to the backend.
+		defer conn.Close()
+
+		return
 	}
 
 	go func() {
