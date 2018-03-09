@@ -2,15 +2,15 @@ package main
 
 import (
 	"io"
-	"log"
 	"net"
 
+	"github.com/prometheus/common/log"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	cliPort    = kingpin.Flag("port", "Port to forward").Default("9000").OverrideDefaultFromEnvar("PORT").String()
-	cliGateway = kingpin.Flag("gateway", "Host IP address which is running xdebug").Default("docker.for.mac.localhost").OverrideDefaultFromEnvar("GATEWAY").String()
+	cliPort    = kingpin.Flag("port", "Port to forward").Default("9000").Envar("PORT").String()
+	cliGateway = kingpin.Flag("gateway", "Host IP address which is running xdebug").Default("docker.for.mac.localhost").Envar("GATEWAY").String()
 )
 
 func main() {
@@ -25,8 +25,10 @@ func main() {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			log.Fatalf("ERROR: failed to accept listener: %v", err)
+			log.Errorf("Failed to accept listener: %v", err)
+			continue
 		}
+
 		go forward(conn, *cliGateway+":"+*cliPort)
 	}
 }
@@ -34,16 +36,26 @@ func main() {
 func forward(conn net.Conn, b string) {
 	client, err := net.Dial("tcp", b)
 	if err != nil {
-		log.Fatalf("Dial failed: %v", err)
+		log.Errorf("Fail to dial: %v", err)
 	}
+
 	go func() {
 		defer client.Close()
 		defer conn.Close()
-		io.Copy(client, conn)
+
+		_, err := io.Copy(client, conn)
+		if err != nil {
+			log.Errorf("Fail to copy connection: %v", err)
+		}
 	}()
+
 	go func() {
 		defer client.Close()
 		defer conn.Close()
-		io.Copy(conn, client)
+
+		_, err := io.Copy(conn, client)
+		if err != nil {
+			log.Errorf("Fail to copy connection: %v", err)
+		}
 	}()
 }
